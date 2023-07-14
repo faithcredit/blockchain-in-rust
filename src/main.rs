@@ -1,3 +1,7 @@
+// chrono = "0.4.23"
+// sha256 = "1.1.1"
+// crypto-hash = "0.3.4"
+
 // -------------------------------------------
 // 			Blockchain in Rust from Scratch
 // -------------------------------------------
@@ -81,6 +85,57 @@ impl BlockChain {
         }
         true
     }
+
+    fn is_chain_valid(&self, chain: &Vec<Block>) -> bool {
+        match chain.len() {
+            0 => println!("The chain is empty"),
+            1 => println!("The chain only contains a single block"),
+            _ => {
+                for i in 1..chain.len() {
+                    let previous = chain.get(i - 1).unwrap();
+                    let current = chain.get(i).unwrap();
+                    if !self.is_block_valid(current, previous) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        println!("The chain is found to be correct and valid");
+        true
+    }
+
+    fn chain_selector(&self, local: Vec<Block>, remote: Vec<Block>) -> Option<Vec<Block>> {
+        let is_local_valid = self.is_chain_valid(&local);
+        let is_remote_valid = self.is_chain_valid(&remote);
+
+        match (is_local_valid, is_remote_valid) {
+            (true, true) => {
+                if local.len() >= remote.len() {
+                    println!("The local copy is valid");
+                    Some(local)
+                } else {
+                    println!("The remote copy is valid");
+                    Some(remote)
+                }
+            }
+
+            (true, false) => {
+                println!("The local copy is valid, returning local copy");
+                Some(local)
+            }
+
+            (false, true) => {
+                println!("The remote copy is valid, returning remote copy");
+                Some(remote)
+            }
+
+            (false, false) => {
+                println!("Both local and remote copies are not valid");
+                None
+            }
+        }
+    }
 }
 
 impl Block {
@@ -126,4 +181,18 @@ fn main() {
 
     let new_block = Block::new(2, new_BC.blocks[0].hash.to_owned(), "Azam".to_string());
     new_BC.try_add_block(new_block);
+
+    new_BC.is_chain_valid(&new_BC.blocks);
+
+    let new_block = Block::new(3, new_BC.blocks[1].hash.to_owned(), "kamran".to_string());
+    new_BC.try_add_block(new_block);
+
+    let new_block = Block::new(4, new_BC.blocks[2].hash.to_owned(), "Khan".to_string());
+    new_BC.try_add_block(new_block);
+
+    new_BC.is_chain_valid(&new_BC.blocks);
+
+    new_BC.blocks = new_BC
+        .chain_selector(new_BC.blocks.to_owned(), new_BC.blocks.to_owned())
+        .unwrap();
 }
